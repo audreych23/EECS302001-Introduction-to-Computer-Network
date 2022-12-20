@@ -31,13 +31,12 @@ void print_min_cost(int id)
   printf("Min cost %d : %d %d %d %d\n", id, nodes[id].dist[0], nodes[id].dist[1], nodes[id].dist[2], nodes[id].dist[3]);
 }
 
-int findMinimumWeightAvailable(int id) {
-  Node src_node = nodes[id];
+int findMinimumDistanceAvailable(int src) {
   int min_dist = infinity;
   int min_node = -1;
   for (int i = 0; i < nodes_num; ++i) {
-    if (!src_node.visit[i] && src_node.dist[i] <= min_dist) {
-      min_dist = src_node.dist[i];
+    if (!nodes[src].visit[i] && nodes[src].dist[i] <= min_dist) {
+      min_dist = nodes[src].dist[i];
       min_node = i;
     }
   }
@@ -49,29 +48,32 @@ void dijkstra(int id)
 {
   // Hint: You should refer the distance in table[][] and use the struct Node to implement your algorithm
   /* TODO */
-  Node src_node = nodes[id];
+  int src = id;
   // infinity means it is currently unreachable
   // src_node.visit[i] means if the node has been processed
   for (int i = 0; i < nodes_num; ++i) {
-    src_node.dist[i] = infinity;
-    src_node.visit[i] = 0;
+    nodes[src].dist[i] = infinity;
+    nodes[src].visit[i] = 0;
   }
-  src_node.dist[id] = 0;
+  nodes[src].dist[id] = 0;
   for (int m = 0; m < (nodes_num - 1); ++m) {
     // find minimum current updated distance
     // ___ : the minimum distance from the current set of distance reachable
     // is already the minimum from src to that node
-    int u = findMinimumDistanceAvailable(id); // utility function
-    src_node.visit[u] = 1;
+    int u = findMinimumDistanceAvailable(src); // utility function
+    nodes[src].visit[u] = 1;
+    printf("%d", u);
     // update the current distance reachable
     for (int v = 0; v < nodes_num; ++v) {
       // it hasn't been processed, can be reached (table not 0 and initial value is not inf)
       // and smaller than current dist[v]
-      if (!src_node.visit[v] &&
+      if (!nodes[src].visit[v] &&
           table[u][v] &&
-          src_node.dist[u] != infinity &&
-          src_node.dist[v] > src_node.dist[u] + table[u][v]) {
-        src_node.dist[v] = src_node.dist[u] + table[u][v]
+          table[u][v] != infinity && 
+          nodes[src].dist[u] != infinity &&
+          nodes[src].dist[v] > nodes[src].dist[u] + table[u][v]) {
+        printf("here");
+        nodes[src].dist[v] = nodes[src].dist[u] + table[u][v];
       }
     }
   }
