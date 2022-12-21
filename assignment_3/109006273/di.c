@@ -58,11 +58,10 @@ void dijkstra(int id)
   nodes[src].dist[id] = 0;
   for (int m = 0; m < (nodes_num - 1); ++m) {
     // find minimum current updated distance
-    // ___ : the minimum distance from the current set of distance reachable
+    // invariant : the minimum distance from the current set of distance reachable
     // is already the minimum from src to that node
     int u = findMinimumDistanceAvailable(src); // utility function
     nodes[src].visit[u] = 1;
-    printf("%d", u);
     // update the current distance reachable
     for (int v = 0; v < nodes_num; ++v) {
       // it hasn't been processed, can be reached (table not 0 and initial value is not inf)
@@ -72,7 +71,6 @@ void dijkstra(int id)
           table[u][v] != infinity && 
           nodes[src].dist[u] != infinity &&
           nodes[src].dist[v] > nodes[src].dist[u] + table[u][v]) {
-        printf("here");
         nodes[src].dist[v] = nodes[src].dist[u] + table[u][v];
       }
     }

@@ -80,8 +80,7 @@ extern void rtupdate1(struct rtpkt *rcvdpkt)
     // this is to check if old minimum cost is actually larger or not
     for (int j = 0; j < 4; ++j) {
       if (min >= dt1.costs[i][j]) {
-        min = dt1.costs[i][j];
-        old_dv[i] = min;
+        old_dv[i] = min = dt1.costs[i][j];
       }
     }
     
@@ -93,21 +92,16 @@ extern void rtupdate1(struct rtpkt *rcvdpkt)
     min = 999;
     for (int j = 0; j < 4; ++j) {
       if (min >= dt1.costs[i][j]) {
-        min = dt1.costs[i][j];
-        new_dv[i] = min;
+        new_dv[i] = min = dt1.costs[i][j];
       }
     }
   }
   
   for (int i = 0; i < 4; ++i) {
-    if (old_dv[i] > new_dv[i]) {
-      dv_updated = 1;
+    if (old_dv[i] != new_dv[i]) {
+      sendPktToNeighbour1();
+      break;
     }
-  }
-
-  // send back the packet
-  if (dv_updated) {
-    sendPktToNeighbour1();
   }
 }
 
@@ -131,8 +125,45 @@ extern void linkhandler1(int linkid, int newcost)
 /* constant definition in prog3.c from 0 to 1 */
 {
   /* TODO */
-
-
+  int old_dv[4] = {}, new_dv[4] = {};
+  // store previous table cost
+  for (int i = 0; i < 4; ++i) {
+    // update col = src_id and only when it's smaller -- dont do this
+    // store old value first
+    int min = 999;
+    // this is to check if old minimum cost is actually larger or not
+    for (int j = 0; j < 4; ++j) {
+      if (min >= dt1.costs[i][j]) {
+        old_dv[i] = min = dt1.costs[i][j];
+      }
+    }
+  }
+  // update table
+  int old_cost = dt1.costs[linkid][linkid];
+  int cost_diff = newcost - old_cost;
+  dt1.costs[linkid][linkid] = newcost;
+  for (int i = 0; i < 4; ++i) {
+    if (i != linkid && dt1.costs[i][linkid] != 999 && dt1.costs[i][linkid] != 0) {
+      dt1.costs[i][linkid] += cost_diff;
+    }
+  }
+  for (int i = 0; i < 4; ++i) {
+    // calculate new dv
+    int min = 999;
+    for (int j = 0; j < 4; ++j) {
+      if (min >= dt1.costs[i][j]) {
+        new_dv[i] = min = dt1.costs[i][j];
+      }
+    }
+  }
+  
+  // send packet to neighbours if the old and new is different
+  for (int i = 0; i < 4; ++i) {
+    if (old_dv[i] != new_dv[i]) {
+      sendPktToNeighbour1();
+      break;  
+    }
+  }
 }
 
 extern void print_min_cost1()

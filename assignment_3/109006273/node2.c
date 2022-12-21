@@ -70,7 +70,6 @@ extern void rtupdate2(struct rtpkt *rcvdpkt)
   /* TODO */
   // update table
   // flag if the packet should be sent
-  int dv_updated = 0;
   int src_id = rcvdpkt->sourceid;
   int dest_id = rcvdpkt->destid;
   // old and new minimum cost for node1
@@ -82,8 +81,7 @@ extern void rtupdate2(struct rtpkt *rcvdpkt)
     // this is to check if old minimum cost is actually larger or not
     for (int j = 0; j < 4; ++j) {
       if (min >= dt2.costs[i][j]) {
-        min = dt2.costs[i][j];
-        old_dv[i] = min;
+        old_dv[i] = min = dt2.costs[i][j];
       }
     }
     
@@ -95,21 +93,16 @@ extern void rtupdate2(struct rtpkt *rcvdpkt)
     min = 999;
     for (int j = 0; j < 4; ++j) {
       if (min >= dt2.costs[i][j]) {
-        min = dt2.costs[i][j];
-        new_dv[i] = min;
+        new_dv[i] = min = dt2.costs[i][j];
       }
     }
   }
   
   for (int i = 0; i < 4; ++i) {
-    if (old_dv[i] > new_dv[i]) {
-      dv_updated = 1;
+    if (old_dv[i] != new_dv[i]) {
+      sendPktToNeighbour2();
+      break;
     }
-  }
-
-  // send back the packet
-  if (dv_updated) {
-    sendPktToNeighbour2();
   }
 }
 
