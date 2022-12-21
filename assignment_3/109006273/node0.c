@@ -2,7 +2,7 @@
 
 struct rtpkt {
   int sourceid;       /* id of sending router sending this pkt */
-  int destid;         /* id of router to which pkt being sent 
+  int destid;         /* id of router to which pkt being sent
                          (must be an immediate neighbor) */
   int mincost[4];    /* min cost to node 0 ... 3 */
   };
@@ -12,7 +12,7 @@ extern int YES;
 extern int NO;
 extern void tolayer2(struct rtpkt packet);
 
-  struct distance_table 
+  struct distance_table
 {
   int costs[4][4] ;
 } dt0;
@@ -38,23 +38,68 @@ extern void read0(FILE *file)
 }
 
 
-extern void rtinit0() 
+extern void rtinit0()
 {
   /* TODO */
+  for (int m = 0; m < 3; ++m) {
+    struct rtpkt sndpkt;
+    sndpkt.sourceid = 0;
+    // find min cost iterate the column for each row which correspond to i in min_cost
+    for (int i = 0; i < 3; ++i) {
+      int min = 999;
+      for (int j = 0; j < 3; ++j) {
+        if (min <= dt0.costs[i][j]) {
+          min = dt0.costs[i][j];
+          sndpkt.mincost[i] = min;
+        }
+      }
+    }
 
-  
+    if (dt0.costs[m][m] != 0 && dt0.costs[m][m] != 999) {
+      sndpkt.destid = m;
+      tolayer2(sndpkt);
+    }
+  }
 }
 
 
 extern void rtupdate0(struct rtpkt *rcvdpkt)
 {
   /* TODO */
+  // update table
+  int src_id = rcvdpkt->sourceid;
+  int dest_id = rcvdpkt->destid;
+  for (int i = 0; i < 4; ++i) {
+    // update col = src_id and only when it's smaller
+    if (dt0.costs[i][src_id] > dt0.costs[src_id][src_id] + min_cost[i]) {
+      // dt0.costs[i][src_id] = min(dt0.costs[i][src_id], dt0.costs[src_id][src_id] + min_cost[i]);
+      dt0.costs[i][src_id] = dt0.costs[src_id][src_id] + min_cost[i];
+    }
+  }
+  // send back the packet
+  for (int m = 0; m < 3; ++m) {
+    struct rtpkt sndpkt;
+    sndpkt.sourceid = 0;
+    // find min cost iterate the column for each row which correspond to i in min_cost
+    for (int i = 0; i < 3; ++i) {
+      int min = 999;
+      for (int j = 0; j < 3; ++j) {
+        if (min <= dt0.costs[i][j]) {
+          min = dt0.costs[i][j];
+          sndpkt.mincost[i] = min;
+        }
+      }
+    }
 
-
+    if (dt0.costs[m][m] != 0 && dt0.costs[m][m] != 999) {
+      sndpkt.destid = m;
+      tolayer2(sndpkt);
+    }
+  }
 }
 
 
- void printdt0(void) 
+ void printdt0(void)
 {
   struct distance_table *dtptr = &dt0;
   printf("                via     \n");
@@ -76,7 +121,7 @@ extern void linkhandler0(int linkid, int newcost)
 {
   /* TODO */
 
-    
+
 }
 
 extern void print_min_cost0()
@@ -96,4 +141,3 @@ extern void print_min_cost0()
 
   printf("Min cost %d : %d %d %d %d\n", 0, min_cost[0], min_cost[1], min_cost[2], min_cost[3]);
 }
-
