@@ -37,17 +37,15 @@ extern void read1(FILE *file)
   sscanf(line, "%d %d %d %d", &dt1.costs[0][0], &dt1.costs[1][1], &dt1.costs[2][2], &dt1.costs[3][3]);
 }
 
-extern void rtinit1()
-{
-  /* TODO */
-  for (int m = 0; m < 3; ++m) {
+void sendPktToNeighbour1() {
+  for (int m = 0; m < 4; ++m) {
     struct rtpkt sndpkt;
     sndpkt.sourceid = 1;
     // find min cost iterate the column for each row which correspond to i in min_cost
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 4; ++i) {
       int min = 999;
-      for (int j = 0; j < 3; ++j) {
-        if (min <= dt1.costs[i][j]) {
+      for (int j = 0; j < 4; ++j) {
+        if (min >= dt1.costs[i][j]) {
           min = dt1.costs[i][j];
           sndpkt.mincost[i] = min;
         }
@@ -59,43 +57,58 @@ extern void rtinit1()
       tolayer2(sndpkt);
     }
   }
-
+}
+extern void rtinit1()
+{
+  /* TODO */
+  sendPktToNeighbour1();
 }
 
 extern void rtupdate1(struct rtpkt *rcvdpkt)
 {
   /* TODO */
-  // update table
+  // flag if the packet should be sent
+  int dv_updated = 0;
   int src_id = rcvdpkt->sourceid;
   int dest_id = rcvdpkt->destid;
+  // old and new minimum cost for node1
+  int old_dv[4] = {}, new_dv[4] = {};
   for (int i = 0; i < 4; ++i) {
-    // update col = src_id and only when it's smaller
-    if (dt1.costs[i][src_id] > dt1.costs[src_id][src_id] + min_cost[i]) {
-      // dt1.costs[i][src_id] = min(dt1.costs[i][src_id], dt1.costs[src_id][src_id] + min_cost[i]);
-      dt1.costs[i][src_id] = dt1.costs[src_id][src_id] + min_cost[i];
-    }
-  }
-  // send back the packet
-  for (int m = 0; m < 3; ++m) {
-    struct rtpkt sndpkt;
-    sndpkt.sourceid = 1;
-    // find min cost iterate the column for each row which correspond to i in min_cost
-    for (int i = 0; i < 3; ++i) {
-      int min = 999;
-      for (int j = 0; j < 3; ++j) {
-        if (min <= dt1.costs[i][j]) {
-          min = dt1.costs[i][j];
-          sndpkt.mincost[i] = min;
-        }
+    // update col = src_id and only when it's smaller -- dont do this
+    // store old value first
+    int min = 999;
+    // this is to check if old minimum cost is actually larger or not
+    for (int j = 0; j < 4; ++j) {
+      if (min >= dt1.costs[i][j]) {
+        min = dt1.costs[i][j];
+        old_dv[i] = min;
       }
     }
+    
+    // assign to new distance table no matter if it is minimum or not
+    // this table is just a helper function to calculate minimum cost
+    dt1.costs[i][src_id] = dt1.costs[src_id][src_id] + rcvdpkt->mincost[i];
 
-    if (dt1.costs[m][m] != 0 && dt1.costs[m][m] != 999) {
-      sndpkt.destid = m;
-      tolayer2(sndpkt);
+    // get the new distant vector (new minimum cost for each row)
+    min = 999;
+    for (int j = 0; j < 4; ++j) {
+      if (min >= dt1.costs[i][j]) {
+        min = dt1.costs[i][j];
+        new_dv[i] = min;
+      }
+    }
+  }
+  
+  for (int i = 0; i < 4; ++i) {
+    if (old_dv[i] > new_dv[i]) {
+      dv_updated = 1;
     }
   }
 
+  // send back the packet
+  if (dv_updated) {
+    sendPktToNeighbour1();
+  }
 }
 
 void printdt1(void)
